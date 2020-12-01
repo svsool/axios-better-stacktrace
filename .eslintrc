@@ -1,0 +1,32 @@
+{
+  "plugins": ["prettier", "@typescript-eslint"],
+  "extends": [
+    "prettier",
+    "prettier/@typescript-eslint",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings"
+  ],
+  "env": {
+    "node": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "paths": ["src"],
+        "extensions": [".ts"]
+      }
+    }
+  },
+  "rules": {
+    "prettier/prettier": "error",
+    "@typescript-eslint/ban-types": 0,
+    "@typescript-eslint/no-explicit-any": 0,
+    "@typescript-eslint/explicit-module-boundary-types": 0
+  }
+}
