@@ -1,5 +1,6 @@
 import axios from 'axios';
 import nock from 'nock';
+import util from 'util';
 
 import axiosBetterStacktrace from './axiosBetterStacktrace';
 
@@ -49,9 +50,11 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (err) {
-      expect(err.stack).toContain('Error: Request failed with status code 500');
-      expect(err.stack).toContain('node_modules/axios/lib/core/createError');
-      expect(err.stack).not.toContain('Error: Axios Better Stacktrace');
+      [util.inspect(err), err.stack].forEach((errOrStack) => {
+        expect(errOrStack).toContain('Error: Request failed with status code 500');
+        expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
+        expect(errOrStack).not.toContain('Error: Axios Better Stacktrace');
+      });
     }
   });
 
@@ -71,12 +74,14 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (err) {
-      expect(err.stack).toContain('Error: Request failed with status code 500');
-      expect(err.stack).toContain('node_modules/axios/lib/core/createError');
+      [util.inspect(err), err.stack].forEach((errOrStack) => {
+        expect(errOrStack).toContain('Error: Request failed with status code 500');
+        expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
 
-      expect(err.stack).toContain('Error: Axios Better Stacktrace');
-      expect(err.stack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
-      expect(err.stack).toContain('axiosBetterStacktrace.spec.ts');
+        expect(errOrStack).toContain('Error: Axios Better Stacktrace');
+        expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
+        expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
+      });
     }
   });
 
