@@ -29,17 +29,42 @@ It was tested with `axios 0.21.0`.
 
 ```js
 // CommonJS
-// const axiosBetterStacktrace = require('axios-better-stacktrace');
+// const axiosBetterStacktrace = require('axios-better-stacktrace').default;
 
 // ES6
 import axiosBetterStacktrace from 'axios-better-stacktrace';
 
-axiosBetterStacktrace(axios);
+// Example 1
+
+axiosBetterStacktrace(axiosAgent);
+
+// response error will get an enhanced stack trace inside a catch block automatically
+axios.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.error(enhancedError));
+
+// Example 2
+
+// enhanced error can also be accessed inside an interceptor callback (e.g. for logging purposes)
+axiosBetterStacktrace(axiosAgent, { exposeTopmostErrorViaConfig: true });
+
+axios.interceptors.response.use(config => config, (result) => {
+  console.error(result.config.topmostError);
+
+  return result;
+});
+
+axios.get('https://npmjs.com/<not-found>/');
 ```
+
+## Options
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| errorMsg | `String` | `Axios Better Stacktrace` | Error message to show next to the original one in the output. |
+| exposeTopmostErrorViaConfig | `Boolean` | `false` | Whether to expose enhanced error as `config.topmostError`. See [this issue](https://github.com/svsool/axios-better-stacktrace/issues/1) for reference. |
 
 ## Example
 
-Axios error without axios-better-stacktrace plugin:
+Axios error without an axios-better-stacktrace plugin:
 
 ```
 Error: Request failed with status code 500
@@ -51,7 +76,7 @@ Error: Request failed with status code 500
   at processTicksAndRejections (node:internal/process/task_queues:80:21)
 ```
 
-Axios error with axios-better-stacktrace plugin:
+Axios error with an axios-better-stacktrace plugin:
 
 ```
 Error: Request failed with status code 500
