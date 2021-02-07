@@ -6,10 +6,6 @@ declare module 'axios' {
   }
 }
 
-type ArgumentsType<T extends (...args: any[]) => any> = T extends (...args: infer A) => any
-  ? A
-  : never;
-
 type EnhancedRequestError = Error & { originalStack: Error['stack'] };
 
 type AxiosInstancePatched = AxiosInstance & {
@@ -35,19 +31,19 @@ type HandlerParams =
   | {
       method: 'request';
       originalHandler: AxiosInstance['request'];
-      args: ArgumentsType<AxiosInstance['request']>;
+      args: Parameters<AxiosInstance['request']>;
     }
   | {
       method: 'get' | 'delete' | 'head' | 'options';
       // all methods share the same handler signature
       originalHandler: AxiosInstance['get'];
-      args: ArgumentsType<AxiosInstance['get']>;
+      args: Parameters<AxiosInstance['get']>;
     }
   | {
       method: 'post' | 'put' | 'patch';
       // all methods share the same handler signature
       originalHandler: AxiosInstance['post'];
-      args: ArgumentsType<AxiosInstance['post']>;
+      args: Parameters<AxiosInstance['post']>;
     };
 
 const axiosBetterStacktraceHandler = (
