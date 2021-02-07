@@ -31,7 +31,7 @@ type AxiosMethod = typeof axiosMethods[number];
 
 type GenericAxiosHandler = <T = any, R = AxiosResponse<T>>(...args: any[]) => Promise<R>;
 
-type PatchAxiosHandlerParams =
+type HandlerParams =
   | {
       method: 'request';
       originalHandler: AxiosInstance['request'];
@@ -51,7 +51,7 @@ type PatchAxiosHandlerParams =
     };
 
 const axiosBetterStacktraceHandler = (
-  params: PatchAxiosHandlerParams,
+  params: HandlerParams,
   topmostError: Error,
   exposeTopmostErrorViaConfig: boolean,
 ) => {
@@ -112,7 +112,7 @@ const axiosBetterStacktraceHandler = (
     }
   })();
 
-  // extend axios original handlers with a catch block which augments original error with a better stack trace
+  // add default catch block to augment original error with a topmostError stack trace automatically
   return handlerResult.catch((maybeError) => {
     if (maybeError instanceof Error) {
       const error = maybeError as EnhancedRequestError;
