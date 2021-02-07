@@ -1,41 +1,145 @@
+import { AxiosInstance, AxiosResponse } from 'axios';
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    topmostError?: Error;
+  }
+}
+
+type ArgumentsType<T extends (...args: any[]) => any> = T extends (...args: infer A) => any
+  ? A
+  : never;
+
 type EnhancedRequestError = Error & { originalStack: Error['stack'] };
 
-type AxiosLikeInstance = {
-  post: Function;
-  put: Function;
-  patch: Function;
-  delete: Function;
-  get: Function;
-  head: Function;
-  options: Function;
-  request: Function;
-};
-
-type AxiosLikeInstancePatched = AxiosLikeInstance & {
+type AxiosInstancePatched = AxiosInstance & {
   __axiosBetterStacktracePatched?: boolean;
 };
 
 const axiosMethods = [
+  'request',
+  'get',
+  'delete',
+  'head',
+  'options',
   'post',
   'put',
   'patch',
-  'delete',
-  'get',
-  'head',
-  'options',
-  'request',
 ] as const;
 
 type AxiosMethod = typeof axiosMethods[number];
 
-const axiosBetterStacktrace = (axiosInstance?: AxiosLikeInstance) => {
+type GenericAxiosHandler = <T = any, R = AxiosResponse<T>>(...args: any[]) => Promise<R>;
+
+type PatchAxiosHandlerParams =
+  | {
+      method: 'request';
+      originalHandler: AxiosInstance['request'];
+      args: ArgumentsType<AxiosInstance['request']>;
+    }
+  | {
+      method: 'get' | 'delete' | 'head' | 'options';
+      // all methods share the same handler signature
+      originalHandler: AxiosInstance['get'];
+      args: ArgumentsType<AxiosInstance['get']>;
+    }
+  | {
+      method: 'post' | 'put' | 'patch';
+      // all methods share the same handler signature
+      originalHandler: AxiosInstance['post'];
+      args: ArgumentsType<AxiosInstance['post']>;
+    };
+
+const axiosBetterStacktraceHandler = (
+  params: PatchAxiosHandlerParams,
+  topmostError: Error,
+  exposeTopmostErrorViaConfig: boolean,
+) => {
+  // extend request.config with topmostError which can be used
+  // as part of interceptors that log errors for instance
+  const handlerResult = (() => {
+    switch (params.method) {
+      case 'request': {
+        const {
+          originalHandler,
+          args: [config],
+        } = params;
+        return originalHandler(
+          exposeTopmostErrorViaConfig
+            ? {
+                ...(config || {}),
+                topmostError,
+              }
+            : config,
+        );
+      }
+      case 'get':
+      case 'delete':
+      case 'head':
+      case 'options': {
+        const {
+          originalHandler,
+          args: [url, config],
+        } = params;
+        return originalHandler(
+          url,
+          exposeTopmostErrorViaConfig
+            ? {
+                ...(config || {}),
+                topmostError,
+              }
+            : config,
+        );
+      }
+      case 'post':
+      case 'put':
+      case 'patch': {
+        const {
+          originalHandler,
+          args: [url, data, config],
+        } = params;
+        return originalHandler(
+          url,
+          data,
+          exposeTopmostErrorViaConfig
+            ? {
+                ...(config || {}),
+                topmostError,
+              }
+            : config,
+        );
+      }
+    }
+  })();
+
+  // extend axios original handlers with a catch block which augments original error with a better stack trace
+  return handlerResult.catch((maybeError) => {
+    if (maybeError instanceof Error) {
+      const error = maybeError as EnhancedRequestError;
+
+      error.originalStack = maybeError.stack;
+      error.stack = `${error.stack}\n${topmostError.stack}`;
+
+      throw error;
+    }
+
+    return maybeError;
+  });
+};
+
+const axiosBetterStacktrace = (
+  axiosInstance?: AxiosInstance,
+  opts: { errorMsg?: string; exposeTopmostErrorViaConfig?: boolean } = {},
+) => {
+  const { errorMsg = 'Axios Better Stacktrace', exposeTopmostErrorViaConfig = false } = opts;
+
   // do nothing if input does not look like an axios instance
   if (!axiosInstance || !axiosMethods.some((method) => axiosInstance.hasOwnProperty(method))) {
     return;
   }
 
   // avoid potential memory leaks if axios instance already patched
-  if ((axiosInstance as AxiosLikeInstancePatched).__axiosBetterStacktracePatched) {
+  if ((axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched) {
     return;
   }
 
@@ -46,36 +150,65 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosLikeInstance) => {
     }
 
     return acc;
-  }, {} as Record<AxiosMethod, Function>);
+  }, {} as Record<AxiosMethod, GenericAxiosHandler>);
 
-  // extend axios original handlers with a catch block which augments original error with a better stack trace
   axiosMethods.forEach((method) => {
     if (method in axiosInstance) {
-      const methodHandler = axiosInstance[method];
+      switch (method) {
+        case 'request': {
+          const originalHandler = axiosInstance[method];
+          axiosInstance[method] = function axiosBetterStacktraceMethodProxy(config) {
+            return axiosBetterStacktraceHandler(
+              {
+                method,
+                originalHandler,
+                args: [config],
+              },
+              new Error(errorMsg),
+              exposeTopmostErrorViaConfig,
+            );
+          };
+          break;
+        }
+        case 'get':
+        case 'delete':
+        case 'head':
+        case 'options': {
+          const originalHandler = axiosInstance[method];
+          axiosInstance[method] = function axiosBetterStacktraceMethodProxy(url, config) {
+            return axiosBetterStacktraceHandler(
+              {
+                method,
+                originalHandler,
+                args: [url, config],
+              },
+              new Error(errorMsg),
+              exposeTopmostErrorViaConfig,
+            );
+          };
+          break;
+        }
+        case 'post':
+        case 'put':
+        case 'patch': {
+          const originalHandler = axiosInstance[method];
+          axiosInstance[method] = function axiosBetterStacktraceMethodProxy(url, data, config) {
+            return axiosBetterStacktraceHandler(
+              {
+                method,
+                originalHandler,
+                args: [url, data, config],
+              },
+              new Error(errorMsg),
+              exposeTopmostErrorViaConfig,
+            );
+          };
+          break;
+        }
+      }
 
-      axiosInstance[method] = function axiosBetterStacktraceMethodProxy(...args: unknown[]) {
-        // obtain handler's stack trace at the topmost level possible
-        // to provide more details than the original error
-        const { stack: topmostStack } = new Error('Axios Better Stacktrace');
-
-        const handlerResult = methodHandler(...args);
-
-        return handlerResult.catch((maybeError: unknown) => {
-          if (maybeError instanceof Error) {
-            const error = maybeError as EnhancedRequestError;
-
-            error.originalStack = maybeError.stack;
-            error.stack = `${error.stack}\n${topmostStack}`;
-
-            throw error;
-          }
-
-          return maybeError;
-        });
-      };
-
-      if (!(axiosInstance as AxiosLikeInstancePatched).__axiosBetterStacktracePatched) {
-        (axiosInstance as AxiosLikeInstancePatched).__axiosBetterStacktracePatched = true;
+      if (!(axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched) {
+        (axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched = true;
       }
     }
   });
@@ -83,7 +216,7 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosLikeInstance) => {
   // ensure consumer of the plugin can restore original handlers
   const restoreOriginalHandlers = () => {
     Object.keys(originalHandlersByMethod).forEach((method) => {
-      axiosInstance[method as AxiosMethod] = originalHandlersByMethod[method as AxiosMethod];
+      axiosInstance[method] = originalHandlersByMethod[method];
     });
   };
 
