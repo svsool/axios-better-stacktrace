@@ -3,6 +3,7 @@
   "description": "Axios plugin that provides better stack traces for axios errors",
   "keywords": [
     "axios",
+    "axios-plugin",
     "plugin",
     "stacktrace",
     "stack",
