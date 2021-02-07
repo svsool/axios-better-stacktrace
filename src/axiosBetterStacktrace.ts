@@ -55,8 +55,8 @@ const axiosBetterStacktraceHandler = (
   topmostError: Error,
   exposeTopmostErrorViaConfig: boolean,
 ) => {
-  // extend request.config with topmostError which can be used
-  // as part of interceptors that log errors for instance
+  // extend config with topmostError which can be used
+  // inside interceptor callbacks (e.g. for logging purposes)
   const handlerResult = (() => {
     switch (params.method) {
       case 'request': {
