@@ -38,21 +38,31 @@ import axiosBetterStacktrace from 'axios-better-stacktrace';
 
 axiosBetterStacktrace(axiosAgent);
 
-// response error will get an enhanced stack trace inside a catch block automatically
-axios.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.error(enhancedError));
+// when using promises response error will get an enhanced stack trace inside a catch block automatically
+axiosAgent.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.error(enhancedError));
+
+// or using async/await
+(async () => {
+  try {
+    await axiosAgent.get('https://npmjs.com/<not-found>/');
+  } catch (enhancedError) {
+    console.error(enhancedError);
+  }
+})();
 
 // Example 2
 
-// enhanced error can also be accessed inside an interceptor callback (e.g. for logging purposes)
+// error won't be enhanced automatically within an interceptor callback due to current axios implementation,
+// but you can access the topmost error manually via config (e.g. for logging purposes)
 axiosBetterStacktrace(axiosAgent, { exposeTopmostErrorViaConfig: true });
 
-axios.interceptors.response.use(config => config, (result) => {
+axiosAgent.interceptors.response.use(config => config, (result) => {
   console.error(result.config.topmostError);
 
   return result;
 });
 
-axios.get('https://npmjs.com/<not-found>/');
+axiosAgent.get('https://npmjs.com/<not-found>/');
 ```
 
 ## Options

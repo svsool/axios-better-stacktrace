@@ -31,13 +31,13 @@ type HandlerParams =
     }
   | {
       method: 'get' | 'delete' | 'head' | 'options';
-      // all methods share the same handler signature
+      // all methods above share the same handler signature
       originalHandler: AxiosInstance['get'];
       args: Parameters<AxiosInstance['get']>;
     }
   | {
       method: 'post' | 'put' | 'patch';
-      // all methods share the same handler signature
+      // all methods above share the same handler signature
       originalHandler: AxiosInstance['post'];
       args: Parameters<AxiosInstance['post']>;
     };
@@ -135,7 +135,6 @@ const axiosBetterStacktrace = (
     return;
   }
 
-  // ensure original handlers can be restored after patching
   const originalHandlers = {
     request: axiosInstance['request'],
     get: axiosInstance['get'],
