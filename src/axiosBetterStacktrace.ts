@@ -1,4 +1,4 @@
-import { AxiosInstance, AxiosResponse } from 'axios';
+import { AxiosInstance } from 'axios';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -22,10 +22,6 @@ const axiosMethods = [
   'put',
   'patch',
 ] as const;
-
-type AxiosMethod = typeof axiosMethods[number];
-
-type GenericAxiosHandler = <T = any, R = AxiosResponse<T>>(...args: any[]) => Promise<R>;
 
 type HandlerParams =
   | {
@@ -140,13 +136,16 @@ const axiosBetterStacktrace = (
   }
 
   // ensure original handlers can be restored after patching
-  const originalHandlersByMethod = axiosMethods.reduce((acc, method) => {
-    if (method in axiosInstance) {
-      acc[method] = axiosInstance[method];
-    }
-
-    return acc;
-  }, {} as Record<AxiosMethod, GenericAxiosHandler>);
+  const originalHandlers = {
+    request: axiosInstance['request'],
+    get: axiosInstance['get'],
+    delete: axiosInstance['delete'],
+    head: axiosInstance['head'],
+    options: axiosInstance['options'],
+    post: axiosInstance['post'],
+    put: axiosInstance['put'],
+    patch: axiosInstance['patch'],
+  };
 
   axiosMethods.forEach((method) => {
     if (method in axiosInstance) {
@@ -211,9 +210,7 @@ const axiosBetterStacktrace = (
 
   // ensure consumer of the plugin can restore original handlers
   const restoreOriginalHandlers = () => {
-    Object.keys(originalHandlersByMethod).forEach((method) => {
-      axiosInstance[method] = originalHandlersByMethod[method];
-    });
+    Object.assign(axiosInstance, originalHandlers);
   };
 
   return restoreOriginalHandlers;
