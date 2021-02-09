@@ -8,8 +8,10 @@ declare module 'axios' {
 
 type EnhancedRequestError = Error & { originalStack: Error['stack'] };
 
+const patchedSym = Symbol('axiosBetterStacktrace.patched');
+
 type AxiosInstancePatched = AxiosInstance & {
-  __axiosBetterStacktracePatched?: boolean;
+  [patchedSym]?: boolean;
 };
 
 const axiosMethods = [
@@ -131,7 +133,7 @@ const axiosBetterStacktrace = (
   }
 
   // avoid potential memory leaks if axios instance already patched
-  if ((axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched) {
+  if ((axiosInstance as AxiosInstancePatched)[patchedSym]) {
     return;
   }
 
@@ -201,8 +203,8 @@ const axiosBetterStacktrace = (
         }
       }
 
-      if (!(axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched) {
-        (axiosInstance as AxiosInstancePatched).__axiosBetterStacktracePatched = true;
+      if (!(axiosInstance as AxiosInstancePatched)[patchedSym]) {
+        (axiosInstance as AxiosInstancePatched)[patchedSym] = true;
       }
     }
   });
