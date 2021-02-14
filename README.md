@@ -55,6 +55,13 @@ axiosAgent.interceptors.response.use(config => config, enhancedError => {
 
   return result;
 });
+
+// you can restore original agent behavior if needed
+const restoreAgent = axiosBetterStacktrace(axiosAgent);
+
+// some code here...
+
+restoreAgent();
 ```
 
 ## Options
