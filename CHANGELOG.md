@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/svsool/axios-better-stacktrace/compare/v1.2.0...v2.0.0) (2021-02-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* `exposeTopmostErrorViaConfig` option was removed
+
+### Features
+
+* Enhance error in the response interceptor automatically ([64a2e76](https://github.com/svsool/axios-better-stacktrace/commit/64a2e76b3e2206f238d7794b4ead544474ebfc08))
+
 ## [1.2.0](https://github.com/svsool/axios-better-stacktrace/compare/v1.1.0...v1.2.0) (2021-02-07)
 
 
