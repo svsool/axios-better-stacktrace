@@ -34,11 +34,10 @@ It was tested with `axios 0.21.0`.
 // ES6
 import axiosBetterStacktrace from 'axios-better-stacktrace';
 
-// Example 1
-
+// use it before any other interceptors
 axiosBetterStacktrace(axiosAgent);
 
-// when using promises response error will get an enhanced stack trace inside a catch block automatically
+// when using promises response error will get an enhanced stack trace automatically
 axiosAgent.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.error(enhancedError));
 
 // or using async/await
@@ -50,19 +49,12 @@ axiosAgent.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.
   }
 })();
 
-// Example 2
-
-// error won't be enhanced automatically within an interceptor callback due to current axios implementation,
-// but you can access the topmost error manually via config (e.g. for logging purposes)
-axiosBetterStacktrace(axiosAgent, { exposeTopmostErrorViaConfig: true });
-
-axiosAgent.interceptors.response.use(config => config, (result) => {
-  console.error(result.config.topmostError);
+// or using a response interceptor and an error callback (e.g. could be useful with a logging middleware)
+axiosAgent.interceptors.response.use(config => config, enhancedError => {
+  console.error(enhancedError);
 
   return result;
 });
-
-axiosAgent.get('https://npmjs.com/<not-found>/');
 ```
 
 ## Options
@@ -70,7 +62,6 @@ axiosAgent.get('https://npmjs.com/<not-found>/');
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | errorMsg | `String` | `Axios Better Stacktrace` | Error message to show next to the original one in the output. |
-| exposeTopmostErrorViaConfig | `Boolean` | `false` | Whether to expose enhanced error as `config.topmostError`. See [this issue](https://github.com/svsool/axios-better-stacktrace/issues/1) for reference. |
 
 ## Example
 

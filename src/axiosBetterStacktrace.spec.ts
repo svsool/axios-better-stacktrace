@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import nock from 'nock';
 import util from 'util';
 
@@ -137,149 +137,27 @@ describe('axiosBetterStacktrace()', () => {
     expect(axiosBetterStacktrace(agent)).toBeUndefined();
   });
 
-  it('should not expose topmostError when exposeTopmostErrorViaConfig = false', async () => {
+  it('should provide an axios error with a better stacktrace inside a response interceptor', async () => {
     nock(AGENT_BASE_URL)
       .patch(/test-endpoint/)
       .reply(500, 'Internal Server Error');
 
     const agent = axios.create({ baseURL: AGENT_BASE_URL });
 
-    axiosBetterStacktrace(agent, { exposeTopmostErrorViaConfig: false });
+    axiosBetterStacktrace(agent);
 
-    let config: AxiosRequestConfig | undefined;
+    let error: Error | undefined;
 
-    agent.interceptors.response.use(undefined, (error) => {
-      config = error.config;
+    agent.interceptors.response.use(undefined, (err) => {
+      error = err;
     });
 
     await agent.patch('/test-endpoint', { greeting: 'Hello World!' });
 
-    expect(config?.topmostError).toBeUndefined();
-  });
-
-  it('should merge config properly when exposeTopmostErrorViaConfig = true', async () => {
-    nock(AGENT_BASE_URL)
-      .get(/test-endpoint/)
-      .reply(200, 'ok');
-    nock(AGENT_BASE_URL)
-      .get(/test-endpoint/)
-      .reply(200, 'ok');
-    nock(AGENT_BASE_URL)
-      .post(/test-endpoint/)
-      .reply(200, 'ok');
-
-    const agent = axios.create({ baseURL: AGENT_BASE_URL });
-
-    axiosBetterStacktrace(agent, { exposeTopmostErrorViaConfig: true });
-
-    const requestConfig = {
-      url: '/test-endpoint',
-      data: { greeting: 'Hello World!' },
-      timeout: 1000,
-    };
-
-    const { config: config1 } = await agent.request(requestConfig);
-
-    expect(config1?.topmostError).toBeDefined();
-    expect(config1).toMatchObject({
-      ...requestConfig,
-      data: JSON.stringify(requestConfig.data),
-    });
-
-    const { config: config2 } = await agent.get('/test-endpoint', { timeout: 1000 });
-
-    expect(config2?.topmostError).toBeDefined();
-    expect(config2?.timeout).toEqual(1000);
-
-    const { config: config3 } = await agent.post(
-      '/test-endpoint',
-      { greeting: 'Hello World!' },
-      { timeout: 1000 },
-    );
-
-    expect(config3?.topmostError).toBeDefined();
-    expect(config3?.timeout).toEqual(1000);
-  });
-
-  describe('with exposeTopmostErrorViaConfig = true and request interceptor', () => {
-    it('should expose topmostError via request.config', async () => {
-      nock(AGENT_BASE_URL)
-        .get(/test-endpoint/)
-        .reply(200, 'ok');
-
-      const agent = axios.create({ baseURL: AGENT_BASE_URL });
-
-      axiosBetterStacktrace(agent, { exposeTopmostErrorViaConfig: true });
-
-      let config: AxiosRequestConfig | undefined;
-
-      agent.interceptors.request.use((configParam) => {
-        config = configParam;
-
-        return config;
-      });
-
-      await agent.request({
-        url: '/test-endpoint',
-      });
-
-      [util.inspect(config?.topmostError), config?.topmostError?.stack].forEach((errOrStack) => {
-        expect(errOrStack).toContain('Error: Axios Better Stacktrace');
-        expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as request]');
-        expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
-      });
-    });
-  });
-
-  describe('with exposeTopmostErrorViaConfig = true and response interceptor', () => {
-    it('should expose topmostError via response.config', async () => {
-      nock(AGENT_BASE_URL)
-        .get(/test-endpoint/)
-        .reply(200, 'ok');
-
-      const agent = axios.create({ baseURL: AGENT_BASE_URL });
-
-      axiosBetterStacktrace(agent, { exposeTopmostErrorViaConfig: true });
-
-      let config: AxiosRequestConfig | undefined;
-
-      agent.interceptors.response.use((response) => {
-        config = response.config;
-
-        return response;
-      });
-
-      await agent.get('/test-endpoint');
-
-      [util.inspect(config?.topmostError), config?.topmostError?.stack].forEach((errOrStack) => {
-        expect(errOrStack).toContain('Error: Axios Better Stacktrace');
-        expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as get]');
-        expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
-      });
-    });
-
-    it('should expose topmostError via error.config', async () => {
-      nock(AGENT_BASE_URL)
-        .patch(/test-endpoint/)
-        .reply(500, 'Internal Server Error');
-
-      const agent = axios.create({ baseURL: AGENT_BASE_URL });
-
-      axiosBetterStacktrace(agent, { exposeTopmostErrorViaConfig: true });
-
-      let config: AxiosRequestConfig | undefined;
-
-      agent.interceptors.response.use(undefined, (error) => {
-        config = error.config;
-      });
-
-      await agent.patch('/test-endpoint', { greeting: 'Hello World!' });
-
-      [util.inspect(config?.topmostError), config?.topmostError?.stack].forEach((errOrStack) => {
-        expect(errOrStack).toContain('Error: Axios Better Stacktrace');
-        expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
-        expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
-      });
+    [util.inspect(error), error?.stack].forEach((errOrStack) => {
+      expect(errOrStack).toContain('Error: Axios Better Stacktrace');
+      expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
+      expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
     });
   });
 });

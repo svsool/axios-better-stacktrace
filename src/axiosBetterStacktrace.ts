@@ -1,18 +1,23 @@
-import { AxiosInstance } from 'axios';
+import { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+
+const patchedSym = Symbol('axiosBetterStacktrace.patched');
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
     topmostError?: Error;
   }
+
+  export interface AxiosError {
+    originalStack?: string;
+  }
 }
-
-type EnhancedRequestError = Error & { originalStack: Error['stack'] };
-
-const patchedSym = Symbol('axiosBetterStacktrace.patched');
 
 type AxiosInstancePatched = AxiosInstance & {
   [patchedSym]?: boolean;
 };
+
+const isAxiosError = (error: unknown): error is AxiosError =>
+  error instanceof Error && (error as AxiosError).isAxiosError !== undefined;
 
 const axiosMethods = [
   'request',
@@ -44,88 +49,53 @@ type HandlerParams =
       args: Parameters<AxiosInstance['post']>;
     };
 
-const axiosBetterStacktraceHandler = (
+// inherits original axios handler generics https://github.com/axios/axios/blob/79979d9214601478b67a330fc144cad25c59f3c7/index.d.ts#L139-L146
+const axiosBetterStacktraceHandler = <T = any, R = AxiosResponse<T>>(
   params: HandlerParams,
   topmostError: Error,
-  exposeTopmostErrorViaConfig: boolean,
-) => {
-  // extend config with topmostError which can be used
-  // inside interceptor callbacks (e.g. for logging purposes)
-  const handlerResult = (() => {
-    switch (params.method) {
-      case 'request': {
-        const {
-          originalHandler,
-          args: [config],
-        } = params;
-        return originalHandler(
-          exposeTopmostErrorViaConfig
-            ? {
-                ...(config || {}),
-                topmostError,
-              }
-            : config,
-        );
-      }
-      case 'get':
-      case 'delete':
-      case 'head':
-      case 'options': {
-        const {
-          originalHandler,
-          args: [url, config],
-        } = params;
-        return originalHandler(
-          url,
-          exposeTopmostErrorViaConfig
-            ? {
-                ...(config || {}),
-                topmostError,
-              }
-            : config,
-        );
-      }
-      case 'post':
-      case 'put':
-      case 'patch': {
-        const {
-          originalHandler,
-          args: [url, data, config],
-        } = params;
-        return originalHandler(
-          url,
-          data,
-          exposeTopmostErrorViaConfig
-            ? {
-                ...(config || {}),
-                topmostError,
-              }
-            : config,
-        );
-      }
+): Promise<R> => {
+  // extends request config with topmostError, so it could be used inside an interceptor to enhance original error
+  switch (params.method) {
+    case 'request': {
+      const {
+        originalHandler,
+        args: [config],
+      } = params;
+      return originalHandler<T, R>({
+        ...(config || {}),
+        topmostError,
+      });
     }
-  })();
-
-  // add default catch block to augment original error with a topmostError stack trace automatically
-  return handlerResult.catch((maybeError) => {
-    if (maybeError instanceof Error) {
-      const error = maybeError as EnhancedRequestError;
-
-      error.originalStack = maybeError.stack;
-      error.stack = `${error.stack}\n${topmostError.stack}`;
-
-      throw error;
+    case 'get':
+    case 'delete':
+    case 'head':
+    case 'options': {
+      const {
+        originalHandler,
+        args: [url, config],
+      } = params;
+      return originalHandler<T, R>(url, {
+        ...(config || {}),
+        topmostError,
+      });
     }
-
-    return maybeError;
-  });
+    case 'post':
+    case 'put':
+    case 'patch': {
+      const {
+        originalHandler,
+        args: [url, data, config],
+      } = params;
+      return originalHandler<T, R>(url, data, {
+        ...(config || {}),
+        topmostError,
+      });
+    }
+  }
 };
 
-const axiosBetterStacktrace = (
-  axiosInstance?: AxiosInstance,
-  opts: { errorMsg?: string; exposeTopmostErrorViaConfig?: boolean } = {},
-) => {
-  const { errorMsg = 'Axios Better Stacktrace', exposeTopmostErrorViaConfig = false } = opts;
+const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?: string } = {}) => {
+  const { errorMsg = 'Axios Better Stacktrace' } = opts;
 
   // do nothing if input does not look like an axios instance
   if (!axiosInstance || !axiosMethods.some((method) => axiosInstance.hasOwnProperty(method))) {
@@ -148,6 +118,21 @@ const axiosBetterStacktrace = (
     patch: axiosInstance['patch'],
   };
 
+  // enhance original error with a topmostError stack trace
+  axiosInstance.interceptors.response.use(undefined, (error: unknown) => {
+    if (isAxiosError(error) && error.config && error.config.topmostError instanceof Error) {
+      error.originalStack = error.stack;
+      error.stack = `${error.stack}\n${error.config.topmostError.stack}`;
+
+      // remove topmostError to not clutter config and expose it to other interceptors down the chain
+      delete error.config.topmostError;
+
+      throw error;
+    }
+
+    throw error;
+  });
+
   axiosMethods.forEach((method) => {
     if (method in axiosInstance) {
       switch (method) {
@@ -161,7 +146,6 @@ const axiosBetterStacktrace = (
                 args: [config],
               },
               new Error(errorMsg),
-              exposeTopmostErrorViaConfig,
             );
           };
           break;
@@ -179,7 +163,6 @@ const axiosBetterStacktrace = (
                 args: [url, config],
               },
               new Error(errorMsg),
-              exposeTopmostErrorViaConfig,
             );
           };
           break;
@@ -196,7 +179,6 @@ const axiosBetterStacktrace = (
                 args: [url, data, config],
               },
               new Error(errorMsg),
-              exposeTopmostErrorViaConfig,
             );
           };
           break;
