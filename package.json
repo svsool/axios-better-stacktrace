@@ -29,6 +29,7 @@
   ],
   "scripts": {
     "build": "rimraf ./lib && tsc",
+    "demo": "ts-node ./demo/index.ts",
     "lint": "eslint ./src -c .eslintrc --ext .ts",
     "ts": "tsc --noEmit",
     "test": "jest ./src --watchAll",
@@ -55,6 +56,7 @@
     "rimraf": "^3.0.2",
     "standard-version": "^9.0.0",
     "ts-jest": "^26.4.4",
+    "ts-node": "^9.1.1",
     "typescript": "^4.1.2"
   },
   "peerDependencies": {

@@ -61,8 +61,10 @@ const restoreAgent = axiosBetterStacktrace(axiosAgent);
 
 // some code here...
 
-restoreAgent();
+restoreAgent && restoreAgent();
 ```
+
+See also [demo](./demo/index.ts).
 
 ## Options
 
@@ -72,37 +74,39 @@ restoreAgent();
 
 ## Example
 
-Axios error without an axios-better-stacktrace plugin:
+Axios error without an `axios-better-stacktrace` plugin:
 
 ```
-Error: Request failed with status code 500
-  at createError (./node_modules/axios/lib/core/createError.js:16:15)
-  at settle (./node_modules/axios/lib/core/settle.js:17:12)
-  at IncomingMessage.handleStreamEnd (./node_modules/axios/lib/adapters/http.js:244:11)
-  at IncomingMessage.emit (node:events:376:20)
-  at endReadableNT (node:internal/streams/readable:1294:12)
-  at processTicksAndRejections (node:internal/process/task_queues:80:21)
+Error: Request failed with status code 404
+    at createError (./node_modules/axios/lib/core/createError.js:16:15)
+    at settle (./node_modules/axios/lib/core/settle.js:17:12)
+    at IncomingMessage.handleStreamEnd (./node_modules/axios/lib/adapters/http.js:244:11)
+    at IncomingMessage.emit (node:events:388:22)
+    at IncomingMessage.EventEmitter.emit (node:domain:470:12)
+    at endReadableNT (node:internal/streams/readable:1294:12)
+    at processTicksAndRejections (node:internal/process/task_queues:80:21)
 ```
 
-Axios error with an axios-better-stacktrace plugin:
+Enhanced axios error with an `axios-better-stacktrace` plugin (run `yarn demo` to see):
 
 ```
-Error: Request failed with status code 500
-  at createError (./node_modules/axios/lib/core/createError.js:16:15)
-  at settle (./node_modules/axios/lib/core/settle.js:17:12)
-  at IncomingMessage.handleStreamEnd (./node_modules/axios/lib/adapters/http.js:244:11)
-  at IncomingMessage.emit (node:events:376:20)
-  at endReadableNT (node:internal/streams/readable:1294:12)
-  at processTicksAndRejections (node:internal/process/task_queues:80:21)
+Error: Request failed with status code 404
+    at createError (./node_modules/axios/lib/core/createError.js:16:15)
+    at settle (./node_modules/axios/lib/core/settle.js:17:12)
+    at IncomingMessage.handleStreamEnd (./node_modules/axios/lib/adapters/http.js:244:11)
+    at IncomingMessage.emit (node:events:388:22)
+    at IncomingMessage.EventEmitter.emit (node:domain:470:12)
+    at endReadableNT (node:internal/streams/readable:1294:12)
+    at processTicksAndRejections (node:internal/process/task_queues:80:21)
 Error: Axios Better Stacktrace
-  at Function.axiosBetterStacktraceMethodProxy [as patch] (./src/axiosBetterStacktrace.ts:59:41)
-  at ./src/axiosBetterStacktrace.spec.ts:51:19
-  at step (./src/axiosBetterStacktrace.spec.ts:33:23)
-  at Object.next (./src/axiosBetterStacktrace.spec.ts:14:53)
-  at ./src/axiosBetterStacktrace.spec.ts:8:71
-  at new Promise (<anonymous>)
-  at Object.<anonymous>.__awaiter (./src/axiosBetterStacktrace.spec.ts:4:12)
-  at Object.<anonymous> (./src/axiosBetterStacktrace.spec.ts:41:57)
-  at Object.asyncJestTest (./node_modules/jest-jasmine2/build/jasmineAsyncInstall.js:106:37)
-  at ./node_modules/jest-jasmine2/build/queueRunner.js:45:12
+    at Function.axiosBetterStacktraceMethodProxy [as get] (./src/axiosBetterStacktrace.ts:167:15)
+    at getNpmPage (./demo/index.ts:10:35)
+    at ./demo/index.ts:13:9
+    at step (./demo/index.ts:33:23)
+    at Object.next (./demo/index.ts:14:53)
+    at ./demo/index.ts:8:71
+    at new Promise (<anonymous>)
+    at __awaiter (./demo/index.ts:4:12)
+    at ./demo/index.ts:12:2
+    at Object.<anonymous> (./demo/index.ts:16:3)
 ```
