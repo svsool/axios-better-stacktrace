@@ -3,6 +3,10 @@ import { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 const patchedSym = Symbol('axiosBetterStacktrace.patched');
 
 declare module 'axios' {
+  export interface AxiosInstance {
+    [patchedSym]?: boolean;
+  }
+
   export interface AxiosRequestConfig {
     topmostError?: Error;
   }
@@ -12,12 +16,8 @@ declare module 'axios' {
   }
 }
 
-type AxiosInstancePatched = AxiosInstance & {
-  [patchedSym]?: boolean;
-};
-
 const isAxiosError = (error: unknown): error is AxiosError =>
-  error instanceof Error && (error as AxiosError).isAxiosError !== undefined;
+  error instanceof Error && (error as AxiosError).isAxiosError;
 
 const axiosMethods = [
   'request',
@@ -49,12 +49,11 @@ type HandlerParams =
       args: Parameters<AxiosInstance['post']>;
     };
 
-// inherits original axios handler generics https://github.com/axios/axios/blob/79979d9214601478b67a330fc144cad25c59f3c7/index.d.ts#L139-L146
-const axiosBetterStacktraceHandler = <T = any, R = AxiosResponse<T>>(
+const axiosBetterStacktraceHandler = <T, R = AxiosResponse<T>>(
   params: HandlerParams,
   topmostError: Error,
 ): Promise<R> => {
-  // extends request config with topmostError, so it could be used inside an interceptor to enhance original error
+  // extend request config with topmostError, so it could be used inside an interceptor to enhance original error
   switch (params.method) {
     case 'request': {
       const {
@@ -103,7 +102,7 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
   }
 
   // avoid potential memory leaks if axios instance already patched
-  if ((axiosInstance as AxiosInstancePatched)[patchedSym]) {
+  if (axiosInstance[patchedSym]) {
     return;
   }
 
@@ -118,20 +117,23 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
     patch: axiosInstance['patch'],
   };
 
-  // enhance original error with a topmostError stack trace
-  axiosInstance.interceptors.response.use(undefined, (error: unknown) => {
-    if (isAxiosError(error) && error.config && error.config.topmostError instanceof Error) {
-      error.originalStack = error.stack;
-      error.stack = `${error.stack}\n${error.config.topmostError.stack}`;
+  // enhance original response error with a topmostError stack trace
+  const responseErrorInterceptorId = axiosInstance.interceptors.response.use(
+    undefined,
+    (error: unknown) => {
+      if (isAxiosError(error) && error.config && error.config.topmostError instanceof Error) {
+        error.originalStack = error.stack;
+        error.stack = `${error.stack}\n${error.config.topmostError.stack}`;
 
-      // remove topmostError to not clutter config and expose it to other interceptors down the chain
-      delete error.config.topmostError;
+        // remove topmostError to not clutter config and expose it to other interceptors down the chain
+        delete error.config.topmostError;
+
+        throw error;
+      }
 
       throw error;
-    }
-
-    throw error;
-  });
+    },
+  );
 
   axiosMethods.forEach((method) => {
     if (method in axiosInstance) {
@@ -185,18 +187,17 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
         }
       }
 
-      if (!(axiosInstance as AxiosInstancePatched)[patchedSym]) {
-        (axiosInstance as AxiosInstancePatched)[patchedSym] = true;
+      if (!axiosInstance[patchedSym]) {
+        axiosInstance[patchedSym] = true;
       }
     }
   });
 
-  // ensure consumer of the plugin can restore original handlers
-  const restoreOriginalHandlers = () => {
+  // ensure consumer of the plugin can restore original handlers and remove custom interceptor
+  return () => {
+    axiosInstance.interceptors.response.eject(responseErrorInterceptorId);
     Object.assign(axiosInstance, originalHandlers);
   };
-
-  return restoreOriginalHandlers;
 };
 
 export default axiosBetterStacktrace;

@@ -129,6 +129,17 @@ describe('axiosBetterStacktrace()', () => {
     expect(agent.delete).toBe(originalDeleteHandler);
   });
 
+  it('should call interceptor eject upon restore', () => {
+    const agent = axios.create({ baseURL: AGENT_BASE_URL });
+    const ejectSpy = jest.spyOn(agent.interceptors.response, 'eject');
+    const restore = axiosBetterStacktrace(agent);
+    const expectedInterceptorId = 0;
+
+    restore && restore();
+
+    expect(ejectSpy).toHaveBeenCalledWith(expectedInterceptorId);
+  });
+
   it('should return undefined if axios instance already patched', () => {
     const agent = axios.create({ baseURL: AGENT_BASE_URL });
 
