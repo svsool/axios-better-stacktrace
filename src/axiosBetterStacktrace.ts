@@ -1,4 +1,4 @@
-import { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import { AxiosInstance, AxiosError } from 'axios';
 
 const patchedSym = Symbol('axiosBetterStacktrace.patched');
 
@@ -30,69 +30,6 @@ const axiosMethods = [
   'patch',
 ] as const;
 
-type HandlerParams =
-  | {
-      method: 'request';
-      originalHandler: AxiosInstance['request'];
-      args: Parameters<AxiosInstance['request']>;
-    }
-  | {
-      method: 'get' | 'delete' | 'head' | 'options';
-      // all methods above share the same handler signature
-      originalHandler: AxiosInstance['get'];
-      args: Parameters<AxiosInstance['get']>;
-    }
-  | {
-      method: 'post' | 'put' | 'patch';
-      // all methods above share the same handler signature
-      originalHandler: AxiosInstance['post'];
-      args: Parameters<AxiosInstance['post']>;
-    };
-
-const axiosBetterStacktraceHandler = <T, R = AxiosResponse<T>>(
-  params: HandlerParams,
-  topmostError: Error,
-): Promise<R> => {
-  // extend request config with topmostError, so it could be used inside an interceptor to enhance original error
-  switch (params.method) {
-    case 'request': {
-      const {
-        originalHandler,
-        args: [config],
-      } = params;
-      return originalHandler<T, R>({
-        ...(config || {}),
-        topmostError,
-      });
-    }
-    case 'get':
-    case 'delete':
-    case 'head':
-    case 'options': {
-      const {
-        originalHandler,
-        args: [url, config],
-      } = params;
-      return originalHandler<T, R>(url, {
-        ...(config || {}),
-        topmostError,
-      });
-    }
-    case 'post':
-    case 'put':
-    case 'patch': {
-      const {
-        originalHandler,
-        args: [url, data, config],
-      } = params;
-      return originalHandler<T, R>(url, data, {
-        ...(config || {}),
-        topmostError,
-      });
-    }
-  }
-};
-
 const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?: string } = {}) => {
   const { errorMsg = 'Axios Better Stacktrace' } = opts;
 
@@ -119,13 +56,19 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
 
   // enhance original response error with a topmostError stack trace
   const responseErrorInterceptorId = axiosInstance.interceptors.response.use(
-    undefined,
+    (response) => {
+      if (response.config && response.config.topmostError instanceof Error) {
+        // remove topmostError to not clutter config and expose it to other interceptors down the chain
+        delete response.config.topmostError;
+      }
+
+      return response;
+    },
     (error: unknown) => {
       if (isAxiosError(error) && error.config && error.config.topmostError instanceof Error) {
         error.originalStack = error.stack;
         error.stack = `${error.stack}\n${error.config.topmostError.stack}`;
 
-        // remove topmostError to not clutter config and expose it to other interceptors down the chain
         delete error.config.topmostError;
 
         throw error;
@@ -141,14 +84,10 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
         case 'request': {
           const originalHandler = axiosInstance[method];
           axiosInstance[method] = function axiosBetterStacktraceMethodProxy(config) {
-            return axiosBetterStacktraceHandler(
-              {
-                method,
-                originalHandler,
-                args: [config],
-              },
-              new Error(errorMsg),
-            );
+            return originalHandler({
+              ...(config || {}),
+              topmostError: new Error(errorMsg),
+            });
           };
           break;
         }
@@ -158,14 +97,10 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
         case 'options': {
           const originalHandler = axiosInstance[method];
           axiosInstance[method] = function axiosBetterStacktraceMethodProxy(url, config) {
-            return axiosBetterStacktraceHandler(
-              {
-                method,
-                originalHandler,
-                args: [url, config],
-              },
-              new Error(errorMsg),
-            );
+            return originalHandler(url, {
+              ...(config || {}),
+              topmostError: new Error(errorMsg),
+            });
           };
           break;
         }
@@ -174,14 +109,10 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
         case 'patch': {
           const originalHandler = axiosInstance[method];
           axiosInstance[method] = function axiosBetterStacktraceMethodProxy(url, data, config) {
-            return axiosBetterStacktraceHandler(
-              {
-                method,
-                originalHandler,
-                args: [url, data, config],
-              },
-              new Error(errorMsg),
-            );
+            return originalHandler(url, data, {
+              ...(config || {}),
+              topmostError: new Error(errorMsg),
+            });
           };
           break;
         }

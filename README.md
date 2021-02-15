@@ -50,7 +50,7 @@ axiosAgent.get('https://npmjs.com/<not-found>/').catch(enhancedError => console.
 })();
 
 // or using a response interceptor and an error callback (e.g. could be useful with a logging middleware)
-axiosAgent.interceptors.response.use(config => config, enhancedError => {
+axiosAgent.interceptors.response.use(response => response, enhancedError => {
   console.error(enhancedError);
 
   return result;

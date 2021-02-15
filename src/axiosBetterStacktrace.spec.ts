@@ -171,4 +171,71 @@ describe('axiosBetterStacktrace()', () => {
       expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
     });
   });
+
+  it('should remove topmostError from the config on response success', async () => {
+    nock(AGENT_BASE_URL)
+      .get(/test-endpoint/)
+      .reply(200, 'All good!');
+
+    const agent = axios.create({ baseURL: AGENT_BASE_URL });
+
+    axiosBetterStacktrace(agent);
+
+    const result = await agent.get('/test-endpoint');
+
+    expect(result.config.topmostError).toBeUndefined();
+  });
+
+  it('should remove topmostError from the config on response error', async () => {
+    nock(AGENT_BASE_URL)
+      .patch(/test-endpoint/)
+      .reply(500, 'Internal Server Error');
+
+    const agent = axios.create({ baseURL: AGENT_BASE_URL });
+
+    axiosBetterStacktrace(agent);
+
+    try {
+      await agent.request({
+        url: '/test-endpoint',
+        method: 'patch',
+      });
+
+      throw new Error(
+        'Execution should not reach to this point and raise an error inside an axios handler above',
+      );
+    } catch (error) {
+      expect(error.config.topmostError).toBeUndefined();
+    }
+  });
+
+  it('should proxy custom config parameters', async () => {
+    nock(AGENT_BASE_URL)
+      .delete(/test-endpoint/)
+      .reply(200)
+      .get(/test-endpoint/)
+      .reply(200)
+      .patch(/test-endpoint/)
+      .reply(200);
+
+    const agent = axios.create({ baseURL: AGENT_BASE_URL });
+
+    axiosBetterStacktrace(agent);
+
+    const customConfig = {
+      timeout: 5000,
+    };
+
+    const responses = await Promise.all([
+      await agent.request({
+        url: '/test-endpoint',
+        method: 'delete',
+        ...customConfig,
+      }),
+      await agent.get('/test-endpoint', customConfig),
+      await agent.patch('/test-endpoint', {}, customConfig),
+    ]);
+
+    expect(responses.map(({ config: { timeout } }) => timeout)).toEqual([5000, 5000, 5000]);
+  });
 });
