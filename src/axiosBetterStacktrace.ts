@@ -131,4 +131,4 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
   };
 };
 
-export default axiosBetterStacktrace;
+export = axiosBetterStacktrace;
