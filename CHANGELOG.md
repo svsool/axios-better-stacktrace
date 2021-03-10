@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/svsool/axios-better-stacktrace/compare/v2.0.2...v2.1.0) (2021-03-10)
+
+
+### Features
+
+* Add ESM support ([#3](https://github.com/svsool/axios-better-stacktrace/issues/3)) ([47fe367](https://github.com/svsool/axios-better-stacktrace/commit/47fe36733516b08e89efe56ed4f3b6bda9a33293))
+
 ### [2.0.2](https://github.com/svsool/axios-better-stacktrace/compare/v2.0.1...v2.0.2) (2021-02-14)
 
 ### [2.0.1](https://github.com/svsool/axios-better-stacktrace/compare/v2.0.0...v2.0.1) (2021-02-14)
