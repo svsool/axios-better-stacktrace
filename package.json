@@ -11,15 +11,9 @@
     "error"
   ],
   "author": "Svyatoslav Sobol <svyatoslav.sobol@gmail.com>",
-  "version": "2.1.0",
-  "main": "./lib/cjs/axiosBetterStacktrace.js",
-  "exports": {
-    ".": {
-      "import": "./lib/esm/axiosBetterStacktrace.js",
-      "require": "./lib/cjs/axiosBetterStacktrace.js"
-    }
-  },
-  "types": "lib/cjs/axiosBetterStacktrace.d.ts",
+  "version": "2.0.2",
+  "main": "lib/axiosBetterStacktrace.js",
+  "types": "lib/axiosBetterStacktrace.d.ts",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,10 +28,7 @@
     "lib/**/*"
   ],
   "scripts": {
-    "build": "rimraf ./lib && yarn build:cjs && yarn build:esm && yarn generate:pkg-json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "generate:pkg-json": "ts-node ./scripts/generatePackageJsonFiles.ts",
+    "build": "rimraf ./lib && tsc",
     "demo": "ts-node ./demo/index.ts",
     "lint": "eslint ./src -c .eslintrc --ext .ts",
     "ts": "tsc --noEmit",
