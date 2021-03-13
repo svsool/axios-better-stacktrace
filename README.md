@@ -74,7 +74,7 @@ See also [demo](./demo/index.ts).
 
 ## Example
 
-Axios error without an `axios-better-stacktrace` plugin:
+Default axios error without an `axios-better-stacktrace` plugin:
 
 ```
 Error: Request failed with status code 404
