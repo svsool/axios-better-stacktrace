@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.1](https://github.com/svsool/axios-better-stacktrace/compare/v2.1.0...v2.1.1) (2021-03-13)
+
+
+### Bug Fixes
+
+* Improve error type detection ([#5](https://github.com/svsool/axios-better-stacktrace/issues/5)) ([e955d9b](https://github.com/svsool/axios-better-stacktrace/commit/e955d9bc90ec9a3aca302ad65a6e197e2eea1ebe))
+
 ## [2.1.0](https://github.com/svsool/axios-better-stacktrace/compare/v2.0.2...v2.1.0) (2021-03-10)
 
 
