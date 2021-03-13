@@ -16,8 +16,12 @@ declare module 'axios' {
   }
 }
 
+// toString used instead of instanceOf for detecting error type to prevent problem mentioned in issue #5
+const isError = (error: unknown): error is Error =>
+  Object.prototype.toString.call(error) === '[object Error]';
+
 const isAxiosError = (error: unknown): error is AxiosError =>
-  error instanceof Error && (error as AxiosError).isAxiosError;
+  isError(error) && (error as AxiosError).isAxiosError;
 
 const axiosMethods = [
   'request',
@@ -57,7 +61,7 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
   // enhance original response error with a topmostError stack trace
   const responseErrorInterceptorId = axiosInstance.interceptors.response.use(
     (response) => {
-      if (response.config && response.config.topmostError instanceof Error) {
+      if (response.config && isError(response.config.topmostError)) {
         // remove topmostError to not clutter config and expose it to other interceptors down the chain
         delete response.config.topmostError;
       }
@@ -65,13 +69,11 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
       return response;
     },
     (error: unknown) => {
-      if (isAxiosError(error) && error.config && error.config.topmostError instanceof Error) {
+      if (isAxiosError(error) && error.config && isError(error.config.topmostError)) {
         error.originalStack = error.stack;
         error.stack = `${error.stack}\n${error.config.topmostError.stack}`;
 
         delete error.config.topmostError;
-
-        throw error;
       }
 
       throw error;
