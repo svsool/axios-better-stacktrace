@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import nock from 'nock';
 import util from 'util';
 
@@ -43,6 +43,8 @@ describe('axiosBetterStacktrace()', () => {
 
     const agent = axios.create({ baseURL: AGENT_BASE_URL });
 
+    expect.assertions(6);
+
     try {
       await agent.patch('/test-endpoint');
 
@@ -50,11 +52,13 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (err) {
-      [util.inspect(err), err.stack].forEach((errOrStack) => {
-        expect(errOrStack).toContain('Error: Request failed with status code 500');
-        expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
-        expect(errOrStack).not.toContain('Error: Axios Better Stacktrace');
-      });
+      if (err instanceof Error) {
+        [util.inspect(err), err.stack].forEach((errOrStack) => {
+          expect(errOrStack).toContain('Error: Request failed with status code 500');
+          expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
+          expect(errOrStack).not.toContain('Error: Axios Better Stacktrace');
+        });
+      }
     }
   });
 
@@ -67,6 +71,8 @@ describe('axiosBetterStacktrace()', () => {
 
     axiosBetterStacktrace(agent);
 
+    expect.assertions(10);
+
     try {
       await agent.patch('/test-endpoint');
 
@@ -74,14 +80,16 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (err) {
-      [util.inspect(err), err.stack].forEach((errOrStack) => {
-        expect(errOrStack).toContain('Error: Request failed with status code 500');
-        expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
+      if (err instanceof Error) {
+        [util.inspect(err), err.stack].forEach((errOrStack) => {
+          expect(errOrStack).toContain('Error: Request failed with status code 500');
+          expect(errOrStack).toContain('node_modules/axios/lib/core/createError');
 
-        expect(errOrStack).toContain('Error: Axios Better Stacktrace');
-        expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
-        expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
-      });
+          expect(errOrStack).toContain('Error: Axios Better Stacktrace');
+          expect(errOrStack).toContain('at Function.axiosBetterStacktraceMethodProxy [as patch]');
+          expect(errOrStack).toContain('axiosBetterStacktrace.spec.ts');
+        });
+      }
     }
   });
 
@@ -94,6 +102,8 @@ describe('axiosBetterStacktrace()', () => {
 
     axiosBetterStacktrace(agent);
 
+    expect.assertions(3);
+
     try {
       await agent.patch('/test-endpoint');
 
@@ -101,9 +111,11 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (err) {
-      expect(err.originalStack).toContain('Error: Request failed with status code 500');
-      expect(err.originalStack).toContain('node_modules/axios/lib/core/createError');
-      expect(err.originalStack).not.toContain('Error: Axios Better Stacktrace');
+      const originalStack = (err as AxiosError).originalStack;
+
+      expect(originalStack).toContain('Error: Request failed with status code 500');
+      expect(originalStack).toContain('node_modules/axios/lib/core/createError');
+      expect(originalStack).not.toContain('Error: Axios Better Stacktrace');
     }
   });
 
@@ -195,6 +207,8 @@ describe('axiosBetterStacktrace()', () => {
 
     axiosBetterStacktrace(agent);
 
+    expect.assertions(1);
+
     try {
       await agent.request({
         url: '/test-endpoint',
@@ -205,7 +219,7 @@ describe('axiosBetterStacktrace()', () => {
         'Execution should not reach to this point and raise an error inside an axios handler above',
       );
     } catch (error) {
-      expect(error.config.topmostError).toBeUndefined();
+      expect((error as AxiosError).config.topmostError).toBeUndefined();
     }
   });
 
