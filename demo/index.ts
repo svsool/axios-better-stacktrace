@@ -10,6 +10,9 @@ axiosBetterStacktrace(npmAgent);
 const getNpmPage = () => npmAgent.get('/<not-found>');
 
 (async () => {
-  // it should print an enhanced error to the terminal upon the run
-  await getNpmPage();
+  try {
+    await getNpmPage();
+  } catch (error) {
+    console.log((error as Error).stack);
+  }
 })();
