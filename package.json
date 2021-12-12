@@ -69,6 +69,6 @@
     "typescript": "^4.5.3"
   },
   "peerDependencies": {
-    "axios": "^0.24.0"
+    "axios": "*"
   }
 }
