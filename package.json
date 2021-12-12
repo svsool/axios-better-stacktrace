@@ -10,7 +10,7 @@
     "trace",
     "error"
   ],
-  "author": "Svyatoslav Sobol <svyatoslav.sobol@gmail.com>",
+  "author": "Svyatoslav Sobol <svyat.nx@gmail.com>",
   "version": "2.1.1",
   "main": "./lib/cjs/axiosBetterStacktrace.js",
   "exports": {
