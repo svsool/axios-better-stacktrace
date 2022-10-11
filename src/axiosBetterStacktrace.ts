@@ -18,7 +18,7 @@ declare module 'axios' {
 
 // toString used instead of instanceOf for detecting error type to prevent problem mentioned in issue #5
 const isError = (error: unknown): error is Error =>
-  Object.prototype.toString.call(error) === '[object Error]';
+  error instanceof Error || Object.prototype.toString.call(error) === '[object Error]';
 
 const isAxiosError = (error: unknown): error is AxiosError =>
   isError(error) && (error as AxiosError).isAxiosError;
