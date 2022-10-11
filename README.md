@@ -100,7 +100,7 @@ Error: Request failed with status code 404
     at processTicksAndRejections (node:internal/process/task_queues:80:21)
 Error: Axios Better Stacktrace
     at Function.axiosBetterStacktraceMethodProxy [as get] (./src/axiosBetterStacktrace.ts:167:15)
-    at getNpmPage (./demo/index.ts:10:35)
+    at getNpmPage (./demo/index.ts:10:35) <---- this is what usually useful to know for further debugging and this plugin adds 🙂
     at ./demo/index.ts:13:9
     at step (./demo/index.ts:33:23)
     at Object.next (./demo/index.ts:14:53)
