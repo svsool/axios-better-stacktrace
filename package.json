@@ -11,7 +11,7 @@
     "error"
   ],
   "author": "Svyatoslav Sobol <svyat.nx@gmail.com>",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "main": "./lib/cjs/axiosBetterStacktrace.js",
   "exports": {
     ".": {
