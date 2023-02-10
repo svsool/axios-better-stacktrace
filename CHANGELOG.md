@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.1.5](https://github.com/svsool/axios-better-stacktrace/compare/v2.1.4...v2.1.5) (2023-02-10)
+
 ### [2.1.3](https://github.com/svsool/axios-better-stacktrace/compare/v2.1.2...v2.1.3) (2022-10-11)
 
 
