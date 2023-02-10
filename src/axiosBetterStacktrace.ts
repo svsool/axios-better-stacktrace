@@ -61,7 +61,7 @@ const axiosBetterStacktrace = (axiosInstance?: AxiosInstance, opts: { errorMsg?:
   // enhance original response error with a topmostError stack trace
   const responseErrorInterceptorId = axiosInstance.interceptors.response.use(
     (response) => {
-      if (response.config && isError(response.config.topmostError)) {
+      if (response && response.config && isError(response.config.topmostError)) {
         // remove topmostError to not clutter config and expose it to other interceptors down the chain
         delete response.config.topmostError;
       }
