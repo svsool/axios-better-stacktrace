@@ -15,8 +15,14 @@
   "main": "./lib/cjs/axiosBetterStacktrace.js",
   "exports": {
     ".": {
-      "import": "./lib/esm/axiosBetterStacktrace.js",
-      "require": "./lib/cjs/axiosBetterStacktrace.js"
+      "import": {
+        "types": "./lib/esm/axiosBetterStacktrace.d.ts",
+        "default": "./lib/esm/axiosBetterStacktrace.js"
+      },
+      "require": {
+        "types": "./lib/cjs/axiosBetterStacktrace.d.ts",
+        "default": "./lib/cjs/axiosBetterStacktrace.js"
+      }
     }
   },
   "types": "lib/cjs/axiosBetterStacktrace.d.ts",

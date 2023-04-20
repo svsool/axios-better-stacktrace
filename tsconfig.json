@@ -5,6 +5,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "inlineSourceMap": true,
+    "declaration": true,
   },
   "include": ["src"],
   "exclude": ["node_modules", "**/*.spec.ts"]
