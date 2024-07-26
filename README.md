@@ -6,7 +6,7 @@ Check [this axios issue](https://github.com/axios/axios/issues/2387) for more de
 
 [![npm](https://img.shields.io/npm/v/axios-better-stacktrace.svg?label=npm%20package)](https://www.npmjs.com/package/axios-better-stacktrace)
 [![npm](https://img.shields.io/npm/dt/axios-better-stacktrace.svg)](https://www.npmjs.com/package/axios-better-stacktrace)
-[![ci](https://github.com/svsool/axios-better-stacktrace/workflows/CI/badge.svg?branch=main)](https://github.com/svsool/axios-better-stacktrace/actions/workflows/ci.yml?query=branch%3Amain)
+[![ci](https://github.com/svsool/axios-better-stacktrace/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/svsool/axios-better-stacktrace/actions/workflows/ci.yml?query=branch%3Amain)
 [![npm](https://img.shields.io/npm/l/axios-better-stacktrace.svg)](https://choosealicense.com/licenses/mit)
 
 ## Installation
